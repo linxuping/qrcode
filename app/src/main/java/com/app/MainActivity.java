@@ -79,14 +79,14 @@ public class MainActivity extends Activity {
                         try{
                             HttpResponse resp = hc.execute(request);
                             String tmps = EntityUtils.toString( ((HttpResponse)resp).getEntity());
-                            String _findstr = "<span id=\"price\" class=\"p-price\">&yen;";
+                            String _findstr = "p-price";//"<span id=\"price\" class=\"p-price\">&yen;";
 
                             int pos = tmps.indexOf(_findstr) + _findstr.length();
                             tmps = tmps.substring(pos, pos+100);
                             pos = tmps.indexOf(' ');
 
                             //msg.obj = Integer.toString(tmps.length());
-                            msg.obj = tmps.substring(0, pos);
+                            msg.obj = tmps;//.substring(0, pos);
                         }catch(Exception ex){
                             msg.what = OP_FAIL;
                             msg.obj = ex.getMessage();
