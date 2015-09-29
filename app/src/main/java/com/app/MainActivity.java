@@ -1,10 +1,12 @@
 package com.app;
 
 import android.app.Activity;
+import android.app.Service;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Vibrator;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -16,10 +18,11 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.CoreProtocolPNames;
-import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
 
-
+/*
+ * case: http://item.m.jd.com/product/1032476598.html
+ */
 public class MainActivity extends Activity {
     private Thread mThread;
     private TextView mHttpResult;
@@ -27,8 +30,14 @@ public class MainActivity extends Activity {
     private int _tmp = 0;
     private static int OP_OK = 0;
     private static int OP_FAIL = 1;
+    private static float g_price = 0;
 
     public static final int SCAN_CODE = 1;
+
+    public void vibrate(long msec){
+        Vibrator vib = (Vibrator)this.getSystemService(Service.VIBRATOR_SERVICE);
+        vib.vibrate(msec);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,10 +60,18 @@ public class MainActivity extends Activity {
             public void handleMessage(Message msg){
                 try{
                     //mHttpResult.setText(EntityUtils.toString( ((HttpResponse)msg.obj).getEntity()));
-                    mHttpResult.setText("size: "+msg.obj.toString());
+                    float _price = Float.valueOf(msg.obj.toString());
+                    if (_price != g_price){
+                        if (g_price != 0)
+                            vibrate(3000);//hint
+                        g_price = _price;
+                    }
+                    mHttpResult.setText("price:  " + _price);
                     //mHttpResult.setText( Integer.toString(EntityUtils.toString(((HttpResponse) msg.obj).getEntity()).length()) );
                 }catch(Exception ex){
-                    mHttpResult.setText(ex.getMessage().toString());
+                    mHttpResult.setText("Exception:  " + ex.getMessage().toString());
+                    vibrate(1000);
+                    return;
                 }
             }
         };
@@ -73,20 +90,22 @@ public class MainActivity extends Activity {
 
                         HttpGet request = new HttpGet(mScanResult.getText().toString());
                         HttpClient hc = new DefaultHttpClient();
-                        HttpParams httpParams = hc.getParams().setParameter(
-                                CoreProtocolPNames.USER_AGENT,
-                                "Mozilla/5.0 (Linux; U; Android 2.3.6; en-us; Nexus S Build/GRK39F) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1");//Android 2.3 Nexus S
+                        //HttpParams httpParams = hc.getParams().setParameter(
+                        //        CoreProtocolPNames.USER_AGENT,
+                        //        "Mozilla/5.0 (Linux; U; Android 2.3.6; en-us; Nexus S Build/GRK39F) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1");//Android 2.3 Nexus S
+                        hc.getParams().setParameter(CoreProtocolPNames.USER_AGENT,
+                                "Mozilla/5.0 (Linux; U; Android 2.3.6; en-us; Nexus S Build/GRK39F) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533.1");
                         try{
                             HttpResponse resp = hc.execute(request);
                             String tmps = EntityUtils.toString( ((HttpResponse)resp).getEntity());
-                            String _findstr = "p-price";//"<span id=\"price\" class=\"p-price\">&yen;";
+                            String _findstr = "<span id=\"price\" class=\"p-price\">&yen;";
 
                             int pos = tmps.indexOf(_findstr) + _findstr.length();
                             tmps = tmps.substring(pos, pos+100);
-                            pos = tmps.indexOf(' ');
+                            pos = tmps.indexOf('<');
 
                             //msg.obj = Integer.toString(tmps.length());
-                            msg.obj = tmps;//.substring(0, pos);
+                            msg.obj = tmps.substring(0, pos);
                         }catch(Exception ex){
                             msg.what = OP_FAIL;
                             msg.obj = ex.getMessage();
