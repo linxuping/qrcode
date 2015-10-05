@@ -37,6 +37,7 @@ public class MainActivity extends Activity {
     private static int OP_TITLE = 2;
     private static int OP_PRICE = 3;
     private static float g_price = 0;
+    private static float g_price_old = 0;
 
     public static final int SCAN_CODE = 1;
 
@@ -49,7 +50,7 @@ public class MainActivity extends Activity {
         Uri notif = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
         Ringtone rt = RingtoneManager.getRingtone(this, notif);
         try {
-            rt.wait((long)1000);
+            rt.wait((long)5000);
         }
         catch (Exception ex){
             ;
@@ -95,10 +96,14 @@ public class MainActivity extends Activity {
                             if (g_price > _price){
                                 ;//vibrate(3000);//hint
                                 sound();
+                                g_price_old = g_price;
                             }
                             g_price = _price;
+                            if (g_price_old == 0)
+                                g_price_old = g_price;
                         }
-                        mHttpResult.setText("价格:  " + _price);
+
+                        mHttpResult.setText("价格 old:" + g_price_old + "  ,new:" + _price);
                         //mHttpResult.setText( Integer.toString(EntityUtils.toString(((HttpResponse) msg.obj).getEntity()).length()) );
                     }
                     else if (msg.what == OP_TITLE){
@@ -106,7 +111,7 @@ public class MainActivity extends Activity {
                     }
                 }catch(Exception ex){
                     mHttpResult.setText("Exception:  " + ex.getMessage().toString());
-                    vibrate(1000);
+                    //vibrate(1000);
                     return;
                 }
             }
